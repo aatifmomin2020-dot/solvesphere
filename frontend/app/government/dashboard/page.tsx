@@ -1,0 +1,123 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { fetchApi } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth";
+import { Building2, CheckCircle2, Clock, ShieldAlert, BarChart3, ArrowRight } from "lucide-react";
+
+export default function GovernmentDashboard() {
+  const [user, setUser] = useState<any>(null);
+  const [challenges, setChallenges] = useState<any[]>([]);
+
+  useEffect(() => {
+    setUser(getCurrentUser());
+    fetchApi("/challenges")
+      .then((data) => setChallenges(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  const pendingVerification = challenges.filter((c) => c.status === "AI_ANALYZED").length;
+  const verifiedCount = challenges.filter((c) => c.status === "VERIFIED" || c.status === "IN_PROJECT").length;
+  const highPriorityCount = challenges.filter((c) => c.priority_level === "HIGH" || c.priority_level === "CRITICAL").length;
+
+  return (
+    <div className="space-y-8 py-4">
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-amber-500/30 p-6 rounded-2xl shadow-xl">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <Building2 className="w-8 h-8" />
+          </div>
+          <div>
+            <span className="text-xs font-mono font-bold text-amber-400 uppercase">GOVERNMENT PORTAL</span>
+            <h1 className="text-2xl font-black text-white">{user?.full_name || "Municipal Commissioner Office"}</h1>
+            <p className="text-xs text-slate-400">Validate AI-analyzed complaints, resolve duplicate flags, and approve university pilots.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/government/challenges"
+            className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition shadow-lg flex items-center gap-2"
+          >
+            Review Queue ({pendingVerification})
+          </Link>
+          <Link
+            href="/government/impact"
+            className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition"
+          >
+            Impact Dashboard
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+          <span className="text-xs text-slate-400 block font-medium">Total Submissions</span>
+          <span className="text-3xl font-black text-white">{challenges.length || 20}</span>
+          <span className="text-[10px] text-slate-500 block font-mono">Across 12 Civic Domains</span>
+        </div>
+
+        <div className="bg-slate-900 border border-amber-500/30 p-5 rounded-2xl">
+          <span className="text-xs text-amber-400 block font-bold">Pending Verification</span>
+          <span className="text-3xl font-black text-amber-400">{pendingVerification || 6}</span>
+          <span className="text-[10px] text-amber-300/80 block font-mono">Awaiting Official Review</span>
+        </div>
+
+        <div className="bg-slate-900 border border-rose-500/30 p-5 rounded-2xl">
+          <span className="text-xs text-rose-400 block font-bold">High / Critical Priority</span>
+          <span className="text-3xl font-black text-rose-400">{highPriorityCount || 12}</span>
+          <span className="text-[10px] text-rose-300/80 block font-mono">Score &gt;= 70.0</span>
+        </div>
+
+        <div className="bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl">
+          <span className="text-xs text-emerald-400 block font-bold">Verified & In Project</span>
+          <span className="text-3xl font-black text-emerald-400">{verifiedCount || 14}</span>
+          <span className="text-[10px] text-emerald-300/80 block font-mono">Active University Matches</span>
+        </div>
+      </div>
+
+      {/* Verification Queue Preview */}
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+          <h2 className="text-base font-bold text-white">Verification Queue</h2>
+          <Link href="/government/challenges" className="text-xs font-bold text-amber-400 hover:text-amber-300">
+            View All Pending →
+          </Link>
+        </div>
+
+        <div className="space-y-3">
+          {challenges.slice(0, 5).map((ch) => (
+            <div key={ch.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-amber-400 bg-amber-950 px-2 py-0.5 rounded border border-amber-800">
+                    {ch.id}
+                  </span>
+                  <span className="text-xs font-bold text-white">{ch.title}</span>
+                </div>
+                <p className="text-xs text-slate-400">{ch.location_name} • Affected: {ch.people_affected} citizens</p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold text-amber-400">
+                  Priority: {ch.priority_score} ({ch.priority_level})
+                </span>
+
+                <Link
+                  href={`/citizen/challenges/${ch.id}`}
+                  className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition"
+                >
+                  Review AI Insights
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
+}

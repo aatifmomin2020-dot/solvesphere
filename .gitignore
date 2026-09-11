@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+backend/venv/
+
+# Build outputs
+frontend/.next/
+frontend/out/
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+
+# Operating system files
+.DS_Store
+Thumbs.db
