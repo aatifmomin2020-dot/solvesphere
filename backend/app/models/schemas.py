@@ -15,6 +15,7 @@ def generate_uuid():
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     email = Column(String, unique=True, index=True, nullable=False)
@@ -24,12 +25,10 @@ class User(Base):
     organization_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    challenges = relationship("Challenge", back_populates="citizen", foreign_keys="[Challenge.citizen_id]")
-    notifications = relationship("Notification", back_populates="user")
-
 
 class GovernmentProfile(Base):
     __tablename__ = "government_profiles"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
@@ -40,6 +39,7 @@ class GovernmentProfile(Base):
 
 class University(Base):
     __tablename__ = "universities"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=True)
@@ -54,6 +54,7 @@ class University(Base):
 
 class Faculty(Base):
     __tablename__ = "faculty"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     university_id = Column(String, ForeignKey("universities.id"), nullable=False)
@@ -66,6 +67,7 @@ class Faculty(Base):
 
 class StudentTeam(Base):
     __tablename__ = "student_teams"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     university_id = Column(String, ForeignKey("universities.id"), nullable=False)
@@ -78,20 +80,22 @@ class StudentTeam(Base):
 
 class IndustryOrganization(Base):
     __tablename__ = "industry_organizations"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=True)
     org_name = Column(String, nullable=False)
     industry_domain = Column(String, nullable=False)
     expertise = Column(JSON, default=list)
-    support_types = Column(JSON, default=list) # MENTORSHIP, FUNDING, TECHNOLOGY, HARDWARE, PILOT
+    support_types = Column(JSON, default=list)
     funding_available_inr = Column(Float, default=0.0)
 
 
 class Challenge(Base):
     __tablename__ = "challenges"
+    __table_args__ = {'extend_existing': True}
 
-    id = Column(String, primary_key=True) # e.g. SS-1042
+    id = Column(String, primary_key=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     category = Column(String, nullable=False)
@@ -99,50 +103,53 @@ class Challenge(Base):
     location_name = Column(String, nullable=False)
     latitude = Column(Float, default=0.0)
     longitude = Column(Float, default=0.0)
-    severity = Column(String, default="MEDIUM") # LOW, MEDIUM, HIGH, CRITICAL
+    severity = Column(String, default="MEDIUM")
     people_affected = Column(Integer, default=100)
     frequency = Column(String, default="Daily")
     evidence_url = Column(String, nullable=True)
     contact_info = Column(String, nullable=True)
     
-    # AI analysis outputs
     priority_score = Column(Float, default=50.0)
     impact_score = Column(Float, default=50.0)
     urgency_score = Column(Float, default=50.0)
     evidence_score = Column(Float, default=50.0)
-    priority_level = Column(String, default="MEDIUM") # LOW, MEDIUM, HIGH, CRITICAL
+    priority_level = Column(String, default="MEDIUM")
     ai_confidence = Column(Float, default=0.85)
     embedding_json = Column(JSON, nullable=True)
     
-    # Workflow status
-    status = Column(String, default="AI_ANALYZED") # AI_ANALYZED, VERIFIED, REJECTED, MERGED, IN_PROJECT, COMPLETED
+    status = Column(String, default="AI_ANALYZED")
     upvotes_count = Column(Integer, default=1)
     
     citizen_id = Column(String, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    citizen = relationship("User", back_populates="challenges", foreign_keys=[citizen_id])
+    citizen = relationship(User, foreign_keys=[citizen_id])
+
+
+User.challenges = relationship(Challenge, back_populates="citizen", foreign_keys=[Challenge.citizen_id])
 
 
 class ChallengeDuplicate(Base):
     __tablename__ = "challenge_duplicates"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     challenge_id = Column(String, ForeignKey("challenges.id"), nullable=False)
     duplicate_challenge_id = Column(String, ForeignKey("challenges.id"), nullable=False)
     similarity_score = Column(Float, nullable=False)
-    status = Column(String, default="POTENTIAL_DUPLICATE") # POTENTIAL_DUPLICATE, MERGED, REJECTED
+    status = Column(String, default="POTENTIAL_DUPLICATE")
 
 
 class IndustryOpportunity(Base):
     __tablename__ = "industry_opportunities"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     industry_id = Column(String, ForeignKey("industry_organizations.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
-    support_type = Column(String, nullable=False) # HARDWARE, FUNDING, MENTORSHIP
+    support_type = Column(String, nullable=False)
     budget_inr = Column(Float, default=0.0)
     domains = Column(JSON, default=list)
     location = Column(String, nullable=False)
@@ -152,12 +159,13 @@ class IndustryOpportunity(Base):
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = {'extend_existing': True}
 
-    id = Column(String, primary_key=True) # e.g. SS-P-1042
+    id = Column(String, primary_key=True)
     challenge_id = Column(String, ForeignKey("challenges.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
-    status = Column(String, default="TEAM_FORMED") # TEAM_FORMED, PROTOTYPE, PILOT, VALIDATION, DEPLOYED, COMPLETED
+    status = Column(String, default="TEAM_FORMED")
     
     university_id = Column(String, ForeignKey("universities.id"), nullable=True)
     faculty_id = Column(String, ForeignKey("faculty.id"), nullable=True)
@@ -168,28 +176,30 @@ class Project(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    milestones = relationship("ProjectMilestone", back_populates="project")
-    impact_metrics = relationship("ImpactMetric", back_populates="project")
-
 
 class ProjectMilestone(Base):
     __tablename__ = "project_milestones"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     project_id = Column(String, ForeignKey("projects.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    stage = Column(String, nullable=False) # PROBLEM_VERIFIED, TEAM_FORMED, PROTOTYPE, PILOT, DEPLOYMENT
-    status = Column(String, default="PENDING") # PENDING, IN_PROGRESS, COMPLETED
+    stage = Column(String, nullable=False)
+    status = Column(String, default="PENDING")
     due_date = Column(String, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     proof_url = Column(String, nullable=True)
 
-    project = relationship("Project", back_populates="milestones")
+    project = relationship(Project, foreign_keys=[project_id])
+
+
+Project.milestones = relationship(ProjectMilestone, back_populates="project", foreign_keys=[ProjectMilestone.project_id])
 
 
 class ImpactMetric(Base):
     __tablename__ = "impact_metrics"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     project_id = Column(String, ForeignKey("projects.id"), nullable=False)
@@ -204,24 +214,29 @@ class ImpactMetric(Base):
     deployment_status = Column(String, default="PILOT_TESTING")
     is_demo_data = Column(Boolean, default=True)
 
-    project = relationship("Project", back_populates="impact_metrics")
+    project = relationship(Project, foreign_keys=[project_id])
+
+
+Project.impact_metrics = relationship(ImpactMetric, back_populates="project", foreign_keys=[ImpactMetric.project_id])
 
 
 class CitizenFeedback(Base):
     __tablename__ = "citizen_feedback"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     challenge_id = Column(String, ForeignKey("challenges.id"), nullable=False)
     project_id = Column(String, ForeignKey("projects.id"), nullable=True)
     citizen_id = Column(String, ForeignKey("users.id"), nullable=False)
-    rating = Column(Integer, default=5) # 1-5
+    rating = Column(Integer, default=5)
     comment = Column(Text, nullable=False)
-    problem_status = Column(String, default="RESOLVED") # RESOLVED, PARTIALLY_RESOLVED, NOT_RESOLVED
+    problem_status = Column(String, default="RESOLVED")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class Notification(Base):
     __tablename__ = "notifications"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
@@ -231,14 +246,18 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    user = relationship("User", back_populates="notifications")
+    user = relationship(User, foreign_keys=[user_id])
+
+
+User.notifications = relationship(Notification, back_populates="user", foreign_keys=[Notification.user_id])
 
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    action = Column(String, nullable=False) # e.g. CHALLENGE_VERIFIED, PROJECT_CREATED
+    action = Column(String, nullable=False)
     actor_id = Column(String, nullable=True)
     actor_role = Column(String, nullable=True)
     target_type = Column(String, nullable=False)
@@ -282,8 +301,11 @@ class ChallengeCreate(BaseModel):
     contact_info: Optional[str] = None
 
 class ChallengeVerifyRequest(BaseModel):
-    action: str # VERIFY, REJECT, REQUEST_INFO, MERGE
+    action: Optional[str] = None
+    decision: Optional[str] = None
     notes: Optional[str] = None
+    official_priority: Optional[str] = None
+    priority_reason: Optional[str] = None
     merge_with_id: Optional[str] = None
 
 class FeedbackCreate(BaseModel):
@@ -295,5 +317,5 @@ class FeedbackCreate(BaseModel):
 
 class MilestoneUpdate(BaseModel):
     milestone_id: str
-    status: str # PENDING, IN_PROGRESS, COMPLETED
+    status: str
     proof_url: Optional[str] = None

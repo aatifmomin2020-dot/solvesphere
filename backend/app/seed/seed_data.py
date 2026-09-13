@@ -13,6 +13,7 @@ from app.ai.priority import calculate_priority_score
 from app.ai.embedding import get_embedding, calculate_cosine_similarity
 
 def seed_database():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 

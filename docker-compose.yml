@@ -3,55 +3,70 @@ version: '3.8'
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: solvesphere_postgres
+    container_name: solvesphere-db
+    restart: always
     environment:
-      POSTGRES_USER: solvesphere
-      POSTGRES_PASSWORD: solvesphere_password
-      POSTGRES_DB: solvesphere_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: solvesphere
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U solvesphere -d solvesphere_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d solvesphere"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: solvesphere_redis
+    container_name: solvesphere-redis
+    restart: always
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: solvesphere_backend
+    container_name: solvesphere-backend
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@postgres:5432/solvesphere
+      - SYNC_DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/solvesphere
+      - DB_ENGINE=postgresql
+      - REDIS_URL=redis://redis:6379/0
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://solvesphere:solvesphere_password@postgres:5432/solvesphere_db
-      - SECRET_KEY=solvesphere_secret_key_sih2026_super_secure_key
-      - USE_PGVECTOR=true
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/storage/uploads
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: solvesphere_frontend
+    container_name: solvesphere-frontend
+    restart: always
     ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - "80:80"
     depends_on:
       - backend
 
 volumes:
   postgres_data:
+  redis_data:
+  uploads_data:

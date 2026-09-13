@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -10,18 +10,19 @@ module.exports = {
         brand: {
           50: '#f0f7ff',
           100: '#e0effe',
+          200: '#bae0fd',
           500: '#0284c7',
-          600: '#0265d6',
-          700: '#034ea2',
-          900: '#0b2545',
+          600: '#0369a1',
+          700: '#075985',
+          800: '#0c4a6e',
+          900: '#0a3654',
         },
-        civic: {
-          green: '#10b981',
-          amber: '#f59e0b',
-          rose: '#f43f5e',
-          purple: '#8b5cf6'
+        gov: {
+          500: '#1e3a8a',
+          600: '#1e40af',
+          700: '#1d4ed8',
         }
-      },
+      }
     },
   },
   plugins: [],

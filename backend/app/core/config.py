@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days for easy demoing
     
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./solvesphere.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./solvesphere.db").replace("sqlite+aiosqlite://", "sqlite://")
     USE_PGVECTOR: bool = os.getenv("USE_PGVECTOR", "false").lower() == "true"
 
 settings = Settings()

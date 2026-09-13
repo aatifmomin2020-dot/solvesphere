@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
-import InteractiveMap from "@/components/InteractiveMap";
-import { MapPin, Search, Filter, ThumbsUp, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
+import { Search, ThumbsUp } from "lucide-react";
 
 export default function ChallengesMarketplacePage() {
   const [challenges, setChallenges] = useState<any[]>([]);
@@ -50,38 +49,38 @@ export default function ChallengesMarketplacePage() {
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <span className="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest">
+          <span className="text-xs font-mono font-bold text-sky-700 uppercase tracking-widest">
             Civic Challenge Marketplace
           </span>
-          <h1 className="text-3xl font-black text-white">Explore Societal Challenges</h1>
-          <p className="text-xs text-slate-400">Discover verified real-world problems seeking university research and industry partners.</p>
+          <h1 className="text-3xl font-black text-slate-900">Explore Societal Challenges</h1>
+          <p className="text-xs text-slate-600">Discover verified real-world problems seeking university research and industry partners.</p>
         </div>
 
         <Link
           href="/citizen/report"
-          className="px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition shadow-lg flex items-center gap-2"
+          className="px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-2"
         >
           + Submit New Challenge
         </Link>
       </div>
 
       {/* FILTER CONTROLS */}
-      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="bg-white border border-slate-200 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 shadow-xs">
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
             type="text"
             placeholder="Search challenges..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+            className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600"
           />
         </div>
 
         <select
           value={selectedDomain}
           onChange={(e) => setSelectedDomain(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+          className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
         >
           <option value="">All Domains</option>
           <option value="Environment">Environment</option>
@@ -95,7 +94,7 @@ export default function ChallengesMarketplacePage() {
         <select
           value={selectedPriority}
           onChange={(e) => setSelectedPriority(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+          className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
         >
           <option value="">All Priority Levels</option>
           <option value="CRITICAL">CRITICAL</option>
@@ -107,7 +106,7 @@ export default function ChallengesMarketplacePage() {
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+          className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
         >
           <option value="">All Workflow Statuses</option>
           <option value="AI_ANALYZED">AI ANALYZED</option>
@@ -126,49 +125,49 @@ export default function ChallengesMarketplacePage() {
           {challenges.map((ch) => (
             <div
               key={ch.id}
-              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 p-6 rounded-2xl flex flex-col justify-between transition group shadow-lg"
+              className="bg-white border border-slate-200 hover:border-sky-400 p-6 rounded-2xl flex flex-col justify-between transition group shadow-xs hover:shadow-md"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800">
+                  <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                     {ch.id}
                   </span>
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded text-white ${
                       ch.priority_level === "CRITICAL"
-                        ? "bg-rose-500 text-slate-950"
+                        ? "bg-rose-500"
                         : ch.priority_level === "HIGH"
-                        ? "bg-amber-500 text-slate-950"
-                        : "bg-sky-500 text-slate-950"
+                        ? "bg-amber-500"
+                        : "bg-sky-500"
                     }`}
                   >
                     {ch.priority_level}
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-white leading-snug group-hover:text-sky-300 transition">
+                <h3 className="text-base font-bold text-slate-900 leading-snug group-hover:text-sky-700 transition">
                   {ch.title}
                 </h3>
 
-                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                   {ch.description}
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-1 text-[11px] font-mono">
-                  <span className="bg-slate-950 text-slate-300 px-2 py-1 rounded border border-slate-800">
+                  <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">
                     {ch.category}
                   </span>
-                  <span className="bg-slate-950 text-emerald-400 px-2 py-1 rounded border border-slate-800">
+                  <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-200 font-bold">
                     Status: {ch.status}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-800/80 flex items-center justify-between mt-4">
+              <div className="pt-6 border-t border-slate-200 flex items-center justify-between mt-4">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={(e) => handleUpvote(ch.id, e)}
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-sky-400 transition bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800"
+                    className="flex items-center gap-1 text-xs text-slate-600 hover:text-sky-700 transition bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200"
                   >
                     <ThumbsUp className="w-3.5 h-3.5" />
                     <span>{ch.upvotes_count}</span>
@@ -181,7 +180,7 @@ export default function ChallengesMarketplacePage() {
 
                 <Link
                   href={`/citizen/challenges/${ch.id}`}
-                  className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                  className="text-xs font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1"
                 >
                   View Details →
                 </Link>

@@ -4,10 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 import EcosystemFlow from "@/components/EcosystemFlow";
-import { 
-  Send, MapPin, AlertTriangle, Cpu, Sparkles, CheckCircle2, 
-  UploadCloud, AlertCircle, ArrowRight, ShieldCheck, Layers 
-} from "lucide-react";
+import { Send, MapPin, AlertTriangle, Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   "Environment", "Healthcare", "Education", "Transportation", 
@@ -86,11 +83,11 @@ export default function ReportProblemPage() {
       
       {/* Header */}
       <div className="text-center space-y-2">
-        <span className="bg-sky-950 text-sky-400 border border-sky-800 text-xs font-mono font-bold px-3 py-1 rounded-full">
+        <span className="bg-sky-100 text-sky-800 border border-sky-200 text-xs font-mono font-bold px-3 py-1 rounded-full">
           CITIZEN PROBLEM SUBMISSION
         </span>
-        <h1 className="text-3xl font-black text-white">Report a Societal Problem</h1>
-        <p className="text-xs text-slate-400 max-w-xl mx-auto">
+        <h1 className="text-3xl font-black text-slate-900">Report a Societal Problem</h1>
+        <p className="text-xs text-slate-600 max-w-xl mx-auto">
           Submit real-world civic challenges. SolveSphere AI instantly classifies, scores priority, and detects duplicate complaints.
         </p>
       </div>
@@ -99,58 +96,58 @@ export default function ReportProblemPage() {
 
       {/* AI ANALYSIS RESULTS OVERLAY / MODAL AFTER SUBMISSION */}
       {aiAnalysisResult ? (
-        <div className="bg-slate-900 border border-emerald-500/50 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in">
+        <div className="bg-white border border-emerald-300 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
           
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200">
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs font-mono font-bold text-emerald-400">AI ANALYSIS COMPLETE</span>
-                <h2 className="text-xl font-bold text-white">Challenge Recorded as {aiAnalysisResult.id}</h2>
+                <span className="text-xs font-mono font-bold text-emerald-700">AI ANALYSIS COMPLETE</span>
+                <h2 className="text-xl font-bold text-slate-900">Challenge Recorded as {aiAnalysisResult.id}</h2>
               </div>
             </div>
-            <span className="bg-slate-950 text-slate-300 border border-slate-800 text-xs font-mono px-3 py-1 rounded-lg">
+            <span className="bg-slate-100 text-slate-700 border border-slate-200 text-xs font-mono px-3 py-1 rounded-lg">
               Status: {aiAnalysisResult.status}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-medium">Domain Classification</span>
-              <span className="text-base font-bold text-sky-400">{aiAnalysisResult.category}</span>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-slate-500 block font-medium">Domain Classification</span>
+              <span className="text-base font-bold text-sky-700">{aiAnalysisResult.category}</span>
               <span className="text-[10px] text-slate-500 block">Sub-domain: {aiAnalysisResult.sub_category}</span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-medium">Explainable Priority Score</span>
-              <span className="text-base font-bold text-amber-400">{aiAnalysisResult.priority_score} / 100</span>
-              <span className="text-[10px] text-amber-300 font-bold block">Level: {aiAnalysisResult.priority_level}</span>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-slate-500 block font-medium">Explainable Priority Score</span>
+              <span className="text-base font-bold text-amber-700">{aiAnalysisResult.priority_score} / 100</span>
+              <span className="text-[10px] text-amber-800 font-bold block">Level: {aiAnalysisResult.priority_level}</span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-medium">AI Confidence</span>
-              <span className="text-base font-bold text-emerald-400">{Math.round(aiAnalysisResult.ai_confidence * 100)}%</span>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+              <span className="text-slate-500 block font-medium">AI Confidence</span>
+              <span className="text-base font-bold text-emerald-700">{Math.round(aiAnalysisResult.ai_confidence * 100)}%</span>
               <span className="text-[10px] text-slate-500 block">SBERT MiniLM Embedding</span>
             </div>
           </div>
 
           {/* Duplicates Section */}
           {aiAnalysisResult.potential_duplicates && aiAnalysisResult.potential_duplicates.length > 0 && (
-            <div className="bg-amber-950/30 border border-amber-500/40 p-4 rounded-xl space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
-                <AlertTriangle className="w-4 h-4" />
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-2">
+              <div className="flex items-center gap-2 text-amber-800 font-bold text-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-700" />
                 <span>Semantic Duplicates Flagged ({aiAnalysisResult.duplicates_count} match found)</span>
               </div>
-              <p className="text-[11px] text-slate-300">
+              <p className="text-[11px] text-slate-700">
                 SolveSphere AI detected similar existing complaints. Human Government Review is required before merging.
               </p>
               <div className="space-y-1.5 pt-1">
                 {aiAnalysisResult.potential_duplicates.map((dup: any) => (
-                  <div key={dup.id} className="flex justify-between items-center bg-slate-950/80 p-2 rounded text-xs border border-amber-900/50">
-                    <span className="font-mono text-sky-400 font-bold">{dup.id}: {dup.title}</span>
-                    <span className="text-amber-300 font-mono font-bold">{dup.similarity}% Similarity</span>
+                  <div key={dup.id} className="flex justify-between items-center bg-white p-2 rounded text-xs border border-amber-200">
+                    <span className="font-mono text-sky-800 font-bold">{dup.id}: {dup.title}</span>
+                    <span className="text-amber-800 font-mono font-bold">{dup.similarity}% Similarity</span>
                   </div>
                 ))}
               </div>
@@ -160,13 +157,13 @@ export default function ReportProblemPage() {
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               onClick={() => router.push(`/citizen/challenges/${aiAnalysisResult.id}`)}
-              className="flex-1 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs text-center transition shadow-lg"
+              className="flex-1 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs text-center transition shadow-md"
             >
               Track Live Workflow Status →
             </button>
             <button
               onClick={() => setAiAnalysisResult(null)}
-              className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition"
+              className="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition border border-slate-200"
             >
               Report Another Problem
             </button>
@@ -175,10 +172,10 @@ export default function ReportProblemPage() {
         </div>
       ) : (
         /* SUBMISSION FORM */
-        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
           
           {error && (
-            <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
             </div>
           )}
@@ -186,23 +183,23 @@ export default function ReportProblemPage() {
           {/* Title & Category */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2 space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Problem Title *</label>
+              <label className="block text-xs font-bold text-slate-800">Problem Title *</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="e.g. Urban Waterlogging Near ABC School"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Primary Domain *</label>
+              <label className="block text-xs font-bold text-slate-800">Primary Domain *</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -213,14 +210,14 @@ export default function ReportProblemPage() {
 
           {/* Description */}
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-300">Detailed Description *</label>
+            <label className="block text-xs font-bold text-slate-800">Detailed Description *</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               required
               placeholder="Explain the societal problem, impact on residents, and duration..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600"
             />
           </div>
 
@@ -228,11 +225,11 @@ export default function ReportProblemPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div className="md:col-span-2 space-y-1">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold text-slate-300">Location Name *</label>
+                <label className="block text-xs font-bold text-slate-800">Location Name *</label>
                 <button
                   type="button"
                   onClick={handleUseGeolocation}
-                  className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                  className="text-[11px] text-sky-700 hover:text-sky-800 font-semibold flex items-center gap-1"
                 >
                   <MapPin className="w-3 h-3" /> Use Current Location
                 </button>
@@ -243,29 +240,29 @@ export default function ReportProblemPage() {
                 onChange={(e) => setLocationName(e.target.value)}
                 required
                 placeholder="e.g. Sector 4, ABC School Road, Pune"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] text-slate-400">Lat</label>
+                <label className="block text-[10px] text-slate-500 font-semibold">Lat</label>
                 <input
                   type="number"
                   step="any"
                   value={latitude}
                   onChange={(e) => setLatitude(parseFloat(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-mono"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400">Lng</label>
+                <label className="block text-[10px] text-slate-500 font-semibold">Lng</label>
                 <input
                   type="number"
                   step="any"
                   value={longitude}
                   onChange={(e) => setLongitude(parseFloat(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white font-mono"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-mono"
                 />
               </div>
             </div>
@@ -274,11 +271,11 @@ export default function ReportProblemPage() {
           {/* Parameters: Severity, People Affected, Frequency */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Severity Level</label>
+              <label className="block text-xs font-bold text-slate-800">Severity Level</label>
               <select
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
               >
                 <option value="LOW">LOW</option>
                 <option value="MEDIUM">MEDIUM</option>
@@ -288,21 +285,21 @@ export default function ReportProblemPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Estimated People Affected</label>
+              <label className="block text-xs font-bold text-slate-800">Estimated People Affected</label>
               <input
                 type="number"
                 value={peopleAffected}
                 onChange={(e) => setPeopleAffected(parseInt(e.target.value) || 0)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Occurrence Frequency</label>
+              <label className="block text-xs font-bold text-slate-800">Occurrence Frequency</label>
               <select
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
               >
                 <option value="Continuous">Continuous</option>
                 <option value="Daily">Daily</option>
@@ -316,24 +313,24 @@ export default function ReportProblemPage() {
           {/* Evidence Upload URL & Contact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Evidence Image/Photo URL</label>
+              <label className="block text-xs font-bold text-slate-800">Evidence Image/Photo URL</label>
               <input
                 type="text"
                 value={evidenceUrl}
                 onChange={(e) => setEvidenceUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300">Contact Email / Phone</label>
+              <label className="block text-xs font-bold text-slate-800">Contact Email / Phone</label>
               <input
                 type="text"
                 value={contactInfo}
                 onChange={(e) => setContactInfo(e.target.value)}
                 placeholder="ramesh@gmail.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600"
               />
             </div>
           </div>
@@ -341,7 +338,7 @@ export default function ReportProblemPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-4 rounded-xl font-black bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-sm transition shadow-xl flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-xl font-black bg-sky-600 hover:bg-sky-700 text-white text-sm transition shadow-md flex items-center justify-center gap-2"
           >
             {submitting ? (
               <span>Running SBERT AI Embeddings & Priority Engine...</span>

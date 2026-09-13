@@ -17,7 +17,6 @@ export default function DemoBanner() {
     try {
       const u = await demoLogin(role);
       setUser(u);
-      // redirect to role dashboard
       const routeMap: Record<string, string> = {
         CITIZEN: "/citizen/dashboard",
         GOVERNMENT: "/government/dashboard",
@@ -56,8 +55,8 @@ export default function DemoBanner() {
         <button
           onClick={() => handleSwitchRole("CITIZEN")}
           disabled={loadingRole !== null}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded transition text-slate-200 font-medium ${
-            user?.role === "CITIZEN" ? "bg-sky-600 text-white font-bold ring-1 ring-sky-300" : "bg-slate-800 hover:bg-slate-700"
+          className={`flex items-center gap-1 px-2.5 py-1 rounded transition font-medium ${
+            user?.role === "CITIZEN" ? "bg-sky-600 text-white font-bold ring-1 ring-sky-300" : "bg-slate-800 hover:bg-slate-700 text-slate-200"
           }`}
         >
           <UserCheck className="w-3 h-3 text-sky-400" />
@@ -67,8 +66,8 @@ export default function DemoBanner() {
         <button
           onClick={() => handleSwitchRole("GOVERNMENT")}
           disabled={loadingRole !== null}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded transition text-slate-200 font-medium ${
-            user?.role === "GOVERNMENT" ? "bg-amber-600 text-white font-bold ring-1 ring-amber-300" : "bg-slate-800 hover:bg-slate-700"
+          className={`flex items-center gap-1 px-2.5 py-1 rounded transition font-medium ${
+            user?.role === "GOVERNMENT" ? "bg-amber-600 text-white font-bold ring-1 ring-amber-300" : "bg-slate-800 hover:bg-slate-700 text-slate-200"
           }`}
         >
           <Building2 className="w-3 h-3 text-amber-400" />
@@ -78,8 +77,8 @@ export default function DemoBanner() {
         <button
           onClick={() => handleSwitchRole("UNIVERSITY")}
           disabled={loadingRole !== null}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded transition text-slate-200 font-medium ${
-            user?.role === "UNIVERSITY" ? "bg-emerald-600 text-white font-bold ring-1 ring-emerald-300" : "bg-slate-800 hover:bg-slate-700"
+          className={`flex items-center gap-1 px-2.5 py-1 rounded transition font-medium ${
+            user?.role === "UNIVERSITY" ? "bg-emerald-600 text-white font-bold ring-1 ring-emerald-300" : "bg-slate-800 hover:bg-slate-700 text-slate-200"
           }`}
         >
           <GraduationCap className="w-3 h-3 text-emerald-400" />
@@ -89,8 +88,8 @@ export default function DemoBanner() {
         <button
           onClick={() => handleSwitchRole("INDUSTRY")}
           disabled={loadingRole !== null}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded transition text-slate-200 font-medium ${
-            user?.role === "INDUSTRY" ? "bg-purple-600 text-white font-bold ring-1 ring-purple-300" : "bg-slate-800 hover:bg-slate-700"
+          className={`flex items-center gap-1 px-2.5 py-1 rounded transition font-medium ${
+            user?.role === "INDUSTRY" ? "bg-purple-600 text-white font-bold ring-1 ring-purple-300" : "bg-slate-800 hover:bg-slate-700 text-slate-200"
           }`}
         >
           <Building className="w-3 h-3 text-purple-400" />

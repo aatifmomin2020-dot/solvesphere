@@ -213,20 +213,23 @@ def verify_challenge(
     if not c:
         raise HTTPException(status_code=404, detail="Challenge not found")
 
-    if req.action == "VERIFY":
+    act = (req.action or req.decision or "VERIFY").upper()
+    if act == "VERIFY":
         c.status = "VERIFIED"
-    elif req.action == "REJECT":
+    elif act == "REJECT":
         c.status = "REJECTED"
-    elif req.action == "REQUEST_INFO":
+    elif act == "REQUEST_INFO":
         c.status = "MORE_INFO_REQUESTED"
-    elif req.action == "MERGE":
+    elif act == "MERGE":
         c.status = "MERGED"
 
+    if req.official_priority:
+        c.priority_level = req.official_priority
     c.updated_at = datetime.datetime.utcnow()
 
     # Create Audit Log
     audit = AuditLog(
-        action=f"CHALLENGE_{req.action}",
+        action=f"CHALLENGE_{act}",
         actor_id=current_user.id,
         actor_role=current_user.role,
         target_type="CHALLENGE",
