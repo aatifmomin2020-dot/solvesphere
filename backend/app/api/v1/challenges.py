@@ -198,7 +198,7 @@ async def verify_challenge(
     current_user: User = Depends(RoleChecker(["GOVERNMENT", "GOVERNMENT_REVIEWER", "GOVERNMENT_OFFICER", "PLATFORM_ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
-    res = await db.execute(select(Challenge).where(Challenge.id == challenge_id))
+    res = await db.execute(select(Challenge).where(or_(Challenge.id == challenge_id, Challenge.public_code == challenge_id)))
     c = res.scalar_one_or_none()
     if not c:
         raise HTTPException(status_code=404, detail="Challenge not found")
@@ -247,9 +247,13 @@ async def submit_feedback(
     current_user: Optional[User] = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    res = await db.execute(select(Challenge).where(or_(Challenge.id == challenge_id, Challenge.public_code == challenge_id)))
+    c = res.scalar_one_or_none()
+    c_id = c.id if c else challenge_id
+
     fb = ChallengeFeedback(
         id=str(uuid.uuid4()),
-        challenge_id=challenge_id,
+        challenge_id=c_id,
         citizen_id=current_user.id if current_user else None,
         rating=req.rating,
         is_resolved=req.is_resolved,
