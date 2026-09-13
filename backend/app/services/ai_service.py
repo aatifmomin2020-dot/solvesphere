@@ -5,6 +5,7 @@ from typing import List, Dict, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.services.embedding_service import EmbeddingService
 from app.models.challenge import Challenge, ChallengeEmbedding
 from app.models.ai import AIAnalysis, SimilarityResult
 from app.core.config import settings
@@ -40,22 +41,6 @@ def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: fl
     return R * c
 
 
-def generate_text_embedding(text: str) -> List[float]:
-    """Generates a 384-dimensional normalized vector embedding for semantic matching."""
-    # Deterministic feature hashing vector generator for local high-performance evaluation
-    words = text.lower().split()
-    vector = [0.0] * 384
-    for idx, word in enumerate(words):
-        h = hash(word) % 384
-        vector[h] += 1.0 / (idx + 1)
-    
-    # Normalize vector
-    norm = math.sqrt(sum(x * x for x in vector))
-    if norm > 0:
-        vector = [x / norm for x in vector]
-    return vector
-
-
 class AIService:
 
     @staticmethod
@@ -65,26 +50,31 @@ class AIService:
         # Security: Treat input text as untrusted data
         untrusted_text = f"<UNTRUSTED_CHALLENGE_TEXT>\nTitle: {challenge.title}\nDescription: {challenge.description}\n</UNTRUSTED_CHALLENGE_TEXT>"
         
-        # Domain Classification
+        # Domain Classification using keyword rules + embedding signal
         text_lower = challenge.description.lower() + " " + challenge.title.lower()
         matched_domain = challenge.domain or "Environment"
+        rule_match_count = 0
         if "water" in text_lower or "flood" in text_lower or "drainage" in text_lower:
             matched_domain = "Environment"
             sub_domain = "Urban Drainage"
+            rule_match_count = 3
         elif "school" in text_lower or "education" in text_lower or "teacher" in text_lower:
             matched_domain = "Education"
             sub_domain = "Infrastructure"
+            rule_match_count = 2
         elif "hospital" in text_lower or "health" in text_lower or "doctor" in text_lower:
             matched_domain = "Healthcare"
             sub_domain = "Primary Healthcare"
+            rule_match_count = 2
         elif "pothole" in text_lower or "road" in text_lower or "bridge" in text_lower:
             matched_domain = "Urban Infrastructure"
             sub_domain = "Roads & Transit"
+            rule_match_count = 2
         else:
             sub_domain = "Civic Infrastructure"
+            rule_match_count = 1
 
-        # Transparent Priority Scoring Engine (Principle 1 & 19)
-        # priority_score = weighted_rule_factors + bounded_ai_signal
+        # Priority Scoring Engine (pop_factor + sev_factor + safety_vulnerability)
         pop_factor = min(challenge.affected_population / 1000.0, 1.0) * 0.3
         sev_map = {"LOW": 0.1, "MODERATE": 0.2, "HIGH": 0.3, "SEVERE": 0.4}
         sev_factor = sev_map.get(challenge.severity_level, 0.2)
@@ -101,13 +91,16 @@ class AIService:
 
         keywords = [w.strip(".,!") for w in challenge.title.lower().split() if len(w) > 3][:6]
 
+        # Dynamic confidence calculated from rule coverage & text depth
+        calculated_confidence = min(0.70 + (rule_match_count * 0.08) + (min(len(text_lower), 200) / 1000.0), 0.96)
+
         analysis = AIAnalysis(
             challenge_id=challenge.id,
             domain_recommended=matched_domain,
             sub_domain_recommended=sub_domain,
             summary_generated=f"Categorized as {matched_domain} ({sub_domain}). Priority recommendation: {priority_label}.",
             keywords_extracted=keywords,
-            confidence_score=0.92,
+            confidence_score=round(calculated_confidence, 2),
             priority_recommended=priority_label,
             priority_score_breakdown={
                 "population_factor": round(pop_factor, 2),
@@ -120,11 +113,12 @@ class AIService:
         
         db.add(analysis)
 
-        # Generate Embedding & Store
-        embedding_vec = generate_text_embedding(f"{challenge.title} {challenge.description}")
+        # Generate 384-D Vector Embedding via EmbeddingService
+        embedding_vec, model_flag = EmbeddingService.generate_embedding(f"{challenge.title} {challenge.description}")
         emb_obj = ChallengeEmbedding(
             challenge_id=challenge.id,
-            embedding_json=embedding_vec
+            embedding_json=embedding_vec,
+            model_name=f"all-MiniLM-L6-v2 [{model_flag}]"
         )
         db.add(emb_obj)
         await db.flush()
@@ -139,7 +133,7 @@ class AIService:
     @staticmethod
     async def find_duplicates(challenge: Challenge, db: AsyncSession) -> List[Dict]:
         """Performs semantic vector matching + geographic proximity calculation."""
-        current_vec = generate_text_embedding(f"{challenge.title} {challenge.description}")
+        current_vec, _ = EmbeddingService.generate_embedding(f"{challenge.title} {challenge.description}")
 
         # Fetch all embeddings
         stmt = select(ChallengeEmbedding, Challenge).join(Challenge, ChallengeEmbedding.challenge_id == Challenge.id)
@@ -161,14 +155,15 @@ class AIService:
                     ch.approx_latitude, ch.approx_longitude
                 )
 
-            if sim >= settings.AI_DUPLICATE_SIMILARITY_THRESHOLD:
+            # 3-Tier Classification: STRONG_DUPLICATE, POTENTIAL_DUPLICATE, DISTINCT
+            if sim >= getattr(settings, "DUPLICATE_STRONG_THRESHOLD", 0.85):
+                decision = "STRONG_DUPLICATE"
+            elif sim >= getattr(settings, "AI_DUPLICATE_SIMILARITY_THRESHOLD", 0.70):
                 decision = "POTENTIAL_DUPLICATE"
-            elif sim >= settings.AI_REVIEW_SIMILARITY_THRESHOLD:
-                decision = "REVIEW"
             else:
                 decision = "DISTINCT"
 
-            if decision in ["POTENTIAL_DUPLICATE", "REVIEW"]:
+            if decision in ["STRONG_DUPLICATE", "POTENTIAL_DUPLICATE"]:
                 duplicate_candidates.append({
                     "challenge_id": ch.id,
                     "public_code": ch.public_code,
@@ -180,3 +175,4 @@ class AIService:
                 })
 
         return duplicate_candidates
+

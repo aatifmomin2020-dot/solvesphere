@@ -8,8 +8,11 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.user import User
 from app.models.project import Project, Milestone, ImpactMetric, Partnership
 from app.models.challenge import Challenge
+
+
 
 router = APIRouter(prefix="/projects", tags=["Project Workspace & Milestones"])
 
@@ -109,13 +112,35 @@ async def update_milestone(
     project_id: str,
     milestone_id: str,
     req: MilestoneUpdateRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Updates milestone status, evidence URL, and calculates project progress percentage."""
+    p_res = await db.execute(select(Project).where(Project.id == project_id))
+    proj = p_res.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
     m_res = await db.execute(select(Milestone).where(Milestone.id == milestone_id, Milestone.project_id == project_id))
     m = m_res.scalar_one_or_none()
     if not m:
-        raise HTTPException(status_code=404, detail="Milestone not found")
+        raise HTTPException(status_code=404, detail="Milestone not found for specified project")
+
+    # Security: Verify user object ownership / authorized role
+    allowed_roles = {"GOVERNMENT", "GOVERNMENT_REVIEWER", "GOVERNMENT_OFFICER", "PLATFORM_ADMIN", "UNIVERSITY", "FACULTY", "STUDENT", "INDUSTRY"}
+    if current_user.primary_role not in allowed_roles:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: You are not authorized to modify milestones for this project."
+        )
+
+    # University/Student scope verification if non-admin
+    if current_user.primary_role in ["UNIVERSITY", "STUDENT", "FACULTY"] and proj.university_id:
+        if current_user.organization_id and current_user.organization_id != proj.university_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: You cannot modify milestones for projects belonging to another university."
+            )
 
     m.status = req.status
     m.completion_percentage = req.completion_percentage
@@ -128,16 +153,27 @@ async def update_milestone(
     all_m = await db.execute(select(Milestone).where(Milestone.project_id == project_id))
     ms = all_m.scalars().all()
     if ms:
+
         total_pct = sum(item.completion_percentage for item in ms)
         avg_pct = int(total_pct / len(ms))
-        
-        p_res = await db.execute(select(Project).where(Project.id == project_id))
-        proj = p_res.scalar_one_or_none()
-        if proj:
-            proj.progress_percentage = avg_pct
-            if avg_pct == 100:
-                proj.stage = "DEPLOYED"
-                proj.deployed_at = datetime.datetime.utcnow()
+        proj.progress_percentage = avg_pct
+        if avg_pct == 100:
+            proj.stage = "DEPLOYED"
+            proj.deployed_at = datetime.datetime.utcnow()
+
+
+
+    db.add(AuditLog(
+        id=str(uuid.uuid4()),
+        actor_id=current_user.id,
+        actor_role=current_user.primary_role,
+        action="MILESTONE_UPDATED",
+        entity_type="MILESTONE",
+        entity_id=m.id,
+        reason=f"Milestone '{m.title}' updated to status {m.status} ({m.completion_percentage}%)"
+    ))
 
     await db.commit()
     return {"message": "Milestone updated successfully.", "milestone_status": m.status, "completion_percentage": m.completion_percentage}
+
+

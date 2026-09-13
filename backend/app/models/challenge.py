@@ -82,10 +82,20 @@ class ChallengeFeedback(Base, TimestampMixin):
     comment = Column(Text, nullable=True)
 
 
+try:
+    from pgvector.sqlalchemy import Vector
+    PGVECTOR_AVAILABLE = True
+except ImportError:
+    Vector = None
+    PGVECTOR_AVAILABLE = False
+
+
 class ChallengeEmbedding(Base, TimestampMixin):
     __tablename__ = "challenge_embeddings"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     challenge_id = Column(String(36), ForeignKey("challenges.id", ondelete="CASCADE"), unique=True, nullable=False)
+    embedding = Column(Vector(384), nullable=True) if Vector is not None else Column(JSON, nullable=True)
     embedding_json = Column(JSON, nullable=False)
     model_name = Column(String(100), default="all-MiniLM-L6-v2")
+

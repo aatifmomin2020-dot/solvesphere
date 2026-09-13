@@ -1,19 +1,21 @@
 import uuid
 import datetime
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func
 from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_optional_current_user, RoleChecker
+from app.core.limiter import limiter
 from app.models.user import User
 from app.models.challenge import Challenge, ChallengeStatusHistory, ChallengeFeedback
 from app.models.system import AuditLog
 from app.services.ai_service import AIService
 
 router = APIRouter(prefix="/challenges", tags=["Challenges & Citizen Portal"])
+
 
 
 class ChallengeCreateRequest(BaseModel):
@@ -97,11 +99,14 @@ async def list_challenges(
 
 
 @router.post("", summary="Submit a New Challenge (4-Step Wizard)")
+@limiter.limit("20/minute")
 async def create_challenge(
+    request: Request,
     req: ChallengeCreateRequest,
     current_user: Optional[User] = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+
     count_res = await db.execute(select(func.count(Challenge.id)))
     cnt = count_res.scalar() or 1000
     public_code = f"SS-{1042 + cnt + 1}"
@@ -144,8 +149,19 @@ async def create_challenge(
         analysis = None
         duplicates = []
 
+    db.add(AuditLog(
+        id=str(uuid.uuid4()),
+        actor_id=current_user.id if current_user else None,
+        actor_role=current_user.primary_role if current_user else "CITIZEN_ANONYMOUS",
+        action="CHALLENGE_SUBMITTED",
+        entity_type="CHALLENGE",
+        entity_id=c.id,
+        reason=f"New challenge report submitted: {c.public_code}"
+    ))
+
     await db.commit()
     await db.refresh(c)
+
 
     return {
         "id": c.id,
@@ -244,17 +260,31 @@ async def verify_challenge(
 async def submit_feedback(
     challenge_id: str,
     req: FeedbackCreateRequest,
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     res = await db.execute(select(Challenge).where(or_(Challenge.id == challenge_id, Challenge.public_code == challenge_id)))
     c = res.scalar_one_or_none()
-    c_id = c.id if c else challenge_id
+    if not c:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+
+    # Check for duplicate feedback submission
+    dup_check = await db.execute(
+        select(ChallengeFeedback).where(
+            ChallengeFeedback.challenge_id == c.id,
+            ChallengeFeedback.citizen_id == current_user.id
+        )
+    )
+    if dup_check.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Feedback has already been submitted for this challenge by your user account."
+        )
 
     fb = ChallengeFeedback(
         id=str(uuid.uuid4()),
-        challenge_id=c_id,
-        citizen_id=current_user.id if current_user else None,
+        challenge_id=c.id,
+        citizen_id=current_user.id,
         rating=req.rating,
         is_resolved=req.is_resolved,
         comment=req.comment
@@ -262,3 +292,4 @@ async def submit_feedback(
     db.add(fb)
     await db.commit()
     return {"message": "Thank you for your feedback! Your evaluation helps improve government & university response quality."}
+

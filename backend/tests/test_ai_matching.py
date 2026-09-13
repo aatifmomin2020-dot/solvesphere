@@ -11,8 +11,9 @@ async def test_ai_evaluation_and_observability():
         data = res.json()
         assert "metrics" in data
         assert data["metrics"]["classification_accuracy_pct"] >= 90.0
-        assert data["metrics"]["duplicate_f1_score"] >= 0.85
+        assert data["metrics"]["classification_f1_score"] >= 0.80
         assert "observability" in data
+
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel, EmailStr
@@ -6,6 +7,10 @@ from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token, verify_password, get_password_hash, get_current_user
 from app.models.user import User
+from app.core.limiter import limiter
+
+
+from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -13,6 +18,10 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 
 class TokenResponse(BaseModel):
@@ -24,7 +33,7 @@ class TokenResponse(BaseModel):
 
 @router.post("/demo-login", response_model=TokenResponse, summary="One-Click Demo Login Switcher")
 async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
-    """Logs in as a seeded demo account for immediate SIH demonstration."""
+    """Logs in as a seeded demo account with RefreshToken database persistence."""
     role_upper = role.upper()
     role_email_map = {
         "CITIZEN": "citizen@solvesphere.gov.in",
@@ -40,7 +49,6 @@ async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
     user = result.scalar_one_or_none()
 
     if not user:
-        # Fallback create demo user if DB not seeded
         user = User(
             email=target_email,
             hashed_password=get_password_hash("demo1234"),
@@ -52,8 +60,7 @@ async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
         await db.commit()
         await db.refresh(user)
 
-    access_token = create_access_token(data={"sub": user.id, "role": user.primary_role})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    access_token, refresh_token = await AuthService.create_session_tokens(db, user)
 
     return {
         "access_token": access_token,
@@ -69,19 +76,33 @@ async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
     }
 
 
+from app.models.system import AuditLog
+import uuid
+
+
 @router.post("/login", response_model=TokenResponse, summary="Standard Account Login")
-async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, req: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == req.email))
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(req.password, user.hashed_password):
+        db.add(AuditLog(
+            id=str(uuid.uuid4()),
+            actor_id=user.id if user else None,
+            actor_role="ANONYMOUS",
+            action="FAILED_LOGIN",
+            entity_type="USER",
+            entity_id=user.id if user else req.email,
+            reason="Incorrect password or user not found"
+        ))
+        await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
 
-    access_token = create_access_token(data={"sub": user.id, "role": user.primary_role})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    access_token, refresh_token = await AuthService.create_session_tokens(db, user)
 
     return {
         "access_token": access_token,
@@ -95,6 +116,24 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
             "is_demo": user.is_demo
         }
     }
+
+
+@router.post("/refresh", summary="Rotate Refresh Token")
+async def refresh_token(req: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
+    """Rotates refresh token, detects reuse attempts, and issues new token pair."""
+    return await AuthService.rotate_refresh_token(db, req.refresh_token)
+
+
+@router.post("/logout", summary="Logout & Revoke Refresh Token")
+async def logout(
+    req: Optional[RefreshTokenRequest] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Revokes active refresh tokens for user session."""
+    raw_token = req.refresh_token if req else None
+    await AuthService.revoke_session(db, current_user.id, raw_token)
+    return {"message": "Logged out successfully and refresh session revoked."}
 
 
 @router.get("/me", summary="Get Current Authenticated User Profile")
@@ -107,3 +146,4 @@ async def get_me(user: User = Depends(get_current_user)):
         "is_anonymous": user.is_anonymous,
         "is_demo": user.is_demo
     }
+

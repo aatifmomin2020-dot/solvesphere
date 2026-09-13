@@ -11,6 +11,7 @@ from app.models.ai import (
 from app.models.project import (
     Proposal, Project, ProjectMember, Partnership, Milestone, ImpactMetric
 )
+from app.models.refresh_token import RefreshToken
 from app.models.system import (
     Notification, AuditLog, OutboxEvent
 )
@@ -18,8 +19,9 @@ from app.models.system import (
 __all__ = [
     "TimestampMixin",
     "User", "Role", "UserRole", "Organization", "University", "Department", "Faculty",
-    "StudentTeam", "TeamMember", "IndustryOrganization", "Challenge", "ChallengeMedia",
+    "StudentTeam", "TeamMember", "IndustryOrganization", "RefreshToken", "Challenge", "ChallengeMedia",
     "ChallengeStatusHistory", "ChallengeFeedback", "ChallengeEmbedding", "AIAnalysis",
     "SimilarityResult", "RecommendationRecord", "Proposal", "Project", "ProjectMember",
     "Partnership", "Milestone", "ImpactMetric", "Notification", "AuditLog", "OutboxEvent"
 ]
+

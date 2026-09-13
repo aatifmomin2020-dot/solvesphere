@@ -82,6 +82,7 @@ async def test_full_11step_challenge_lifecycle():
         # STEP 6: Project Workspace Milestone Update
         ms_res = await ac.put(
             f"/api/v1/projects/{target_proj_id}/milestones/ms-test-id",
+            headers={"Authorization": f"Bearer {univ_token}"},
             json={"status": "COMPLETED", "completion_percentage": 100}
         )
         # 404 is allowed if test milestone ID doesn't exist, but workspace get must succeed
@@ -97,6 +98,8 @@ async def test_full_11step_challenge_lifecycle():
         # STEP 8: Citizen Feedback Submission
         fb_res = await ac.post(
             f"/api/v1/challenges/{ch_id}/feedback",
+            headers={"Authorization": f"Bearer {gov_token}"},
             json={"rating": 5, "is_resolved": "YES", "comment": "Pedestrian signal installed! Great job."}
         )
         assert fb_res.status_code == 200
+

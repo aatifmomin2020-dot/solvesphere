@@ -65,6 +65,15 @@ async def get_government_dashboard(
         "created_at": c.created_at
     } for c in verification_queue]
 
+    # Dynamic SLA calculation for verified challenges
+    sla_res = await db.execute(select(Challenge).where(Challenge.verified_at.isnot(None)))
+    verified_challenges = sla_res.scalars().all()
+    if verified_challenges:
+        total_seconds = sum((c.verified_at - c.created_at).total_seconds() for c in verified_challenges if c.verified_at and c.created_at)
+        avg_sla_hours = round(max(total_seconds / len(verified_challenges) / 3600.0, 0.1), 1)
+    else:
+        avg_sla_hours = 0.0
+
     return {
         "kpis": {
             "total_submitted": total_submitted,
@@ -74,7 +83,8 @@ async def get_government_dashboard(
             "active_projects": active_projects,
             "deployed_solutions": deployed_solutions,
             "delayed_projects": delayed_projects,
-            "avg_verification_sla_hours": 14.5
+            "avg_verification_sla_hours": avg_sla_hours
         },
         "verification_queue": queue_items
     }
+

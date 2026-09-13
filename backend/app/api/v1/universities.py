@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from pydantic import BaseModel
@@ -10,7 +11,9 @@ from app.core.security import get_current_user
 from app.models.user import User, University, StudentTeam
 from app.models.challenge import Challenge
 from app.models.project import Proposal
+from app.models.system import AuditLog
 from app.services.matching_service import UniversityMatchingEngine
+
 
 router = APIRouter(prefix="/universities", tags=["University Portal & Matching"])
 
@@ -47,13 +50,35 @@ async def create_proposal(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    univ_res = await db.execute(select(University).limit(1))
-    univ = univ_res.scalar_one_or_none()
-    team_res = await db.execute(select(StudentTeam).limit(1))
-    team = team_res.scalar_one_or_none()
+    """Submits a university technical proposal tied to the authenticated user's organization."""
+    univ = None
+    if current_user.organization_id:
+        univ_res = await db.execute(
+            select(University).where(
+                or_(University.id == current_user.organization_id, University.organization_id == current_user.organization_id)
+            )
+        )
+        univ = univ_res.scalar_one_or_none()
 
-    if not univ or not team:
-        raise HTTPException(status_code=400, detail="University or Team records not available in demo database.")
+    if not univ and current_user.primary_role in ["UNIVERSITY", "FACULTY", "STUDENT", "PLATFORM_ADMIN"]:
+        # Match demo university for authorized university roles
+        univ_res = await db.execute(select(University).where(University.is_demo == True))
+        univ = univ_res.scalars().first()
+
+    if not univ:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Your account is not associated with an authorized university organization."
+        )
+
+    team_res = await db.execute(select(StudentTeam).where(StudentTeam.university_id == univ.id))
+    team = team_res.scalars().first()
+
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No student team found for your university institution."
+        )
 
     ch_res = await db.execute(select(Challenge).where(or_(Challenge.id == req.challenge_id, Challenge.public_code == req.challenge_id)))
     ch = ch_res.scalar_one_or_none()
@@ -73,12 +98,25 @@ async def create_proposal(
         budget_estimate_inr=req.budget_estimate_inr,
         status="SUBMITTED"
     )
+
     db.add(prop)
 
     if ch:
         ch.status = "PROPOSAL_SUBMITTED"
 
+    db.add(AuditLog(
+        id=str(uuid.uuid4()),
+        actor_id=current_user.id,
+        actor_role=current_user.primary_role,
+        action="PROPOSAL_SUBMITTED",
+        entity_type="PROPOSAL",
+        entity_id=prop.id,
+        reason=f"Proposal submitted for challenge {target_ch_id}"
+    ))
+
     await db.commit()
     await db.refresh(prop)
 
+
     return {"message": "Proposal submitted successfully for government evaluation.", "proposal_id": prop.id, "status": prop.status}
+
