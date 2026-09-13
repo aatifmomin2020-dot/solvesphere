@@ -81,10 +81,16 @@ async def seed_database(db: AsyncSession):
     # 3. Create Organizations & University & Industry
     gov_org = Organization(id=str(uuid.uuid4()), name="Department of Urban Infrastructure", org_type="GOVERNMENT", district="Pune", state="Maharashtra")
     univ_org = Organization(id=str(uuid.uuid4()), name="ABC Institute of Technology", org_type="UNIVERSITY", district="Pune", state="Maharashtra")
-    ind_org = Organization(id=str(uuid.uuid4()), name="SmartCity Technologies Ltd", org_type="INDUSTRY", district="Pune", state="Maharashtra")
-    
+    ind_org = Organization(id=str(uuid.uuid4()), name="Apex CleanTech Solutions", org_type="INDUSTRY", district="Pune", state="Maharashtra")
     db.add_all([gov_org, univ_org, ind_org])
     await db.flush()
+
+    user_map["GOVERNMENT"].organization_id = gov_org.id
+    user_map["UNIVERSITY"].organization_id = univ_org.id
+    user_map["FACULTY"].organization_id = univ_org.id
+    user_map["STUDENT"].organization_id = univ_org.id
+    user_map["INDUSTRY"].organization_id = ind_org.id
+
 
     univ = University(
         id=str(uuid.uuid4()),

@@ -268,6 +268,13 @@ async def submit_feedback(
     if not c:
         raise HTTPException(status_code=404, detail="Challenge not found")
 
+    # Eligibility Check: Only the submitter or authorized reviewer can give outcome feedback
+    if current_user.primary_role == "CITIZEN" and c.citizen_id and c.citizen_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Only the citizen who originally submitted this challenge can submit outcome feedback."
+        )
+
     # Check for duplicate feedback submission
     dup_check = await db.execute(
         select(ChallengeFeedback).where(
@@ -280,6 +287,7 @@ async def submit_feedback(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Feedback has already been submitted for this challenge by your user account."
         )
+
 
     fb = ChallengeFeedback(
         id=str(uuid.uuid4()),

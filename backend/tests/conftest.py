@@ -2,6 +2,9 @@ import os
 import pytest
 import pytest_asyncio
 from app.core.database import init_db, engine, Base
+from app.core.limiter import limiter
+
+limiter.enabled = False
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_test_database():

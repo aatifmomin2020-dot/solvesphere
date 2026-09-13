@@ -1,4 +1,5 @@
 import math
+import hashlib
 from typing import List, Tuple, Optional
 from app.core.logging import logger
 
@@ -51,7 +52,7 @@ class EmbeddingService:
         words = text.lower().split()
         vector = [0.0] * cls.EMBEDDING_DIM
         for idx, word in enumerate(words):
-            h = hash(word) % cls.EMBEDDING_DIM
+            h = int(hashlib.md5(word.encode()).hexdigest(), 16) % cls.EMBEDDING_DIM
             vector[h] += 1.0 / (idx + 1)
 
         norm = math.sqrt(sum(x * x for x in vector))

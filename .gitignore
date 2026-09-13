@@ -1,17 +1,27 @@
-# Dependencies
-node_modules/
+# Python Bytecode & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
 backend/venv/
 
-# Build outputs
+# Dependencies & Build Outputs
+node_modules/
+frontend/dist/
+dist/
 frontend/.next/
 frontend/out/
 *.db
 *.sqlite3
 
-# Environment variables
+# Environment & Credentials
 .env
-.env.local
+.env.*
+!.env.example
 
 # Operating system files
 .DS_Store
 Thumbs.db
+

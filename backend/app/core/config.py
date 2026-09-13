@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
     SECRET_KEY: str = "solvesphere-secret-key-change-in-production-min-32-chars-long"
 
     # Database
@@ -35,10 +35,11 @@ class Settings(BaseSettings):
     MAX_VIDEO_SIZE_MB: int = 50
     UPLOAD_DIR: str = "./storage/uploads"
 
-    # AI Configuration
+    # AI Configuration & Vector Thresholds
     AI_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
-    AI_DUPLICATE_SIMILARITY_THRESHOLD: float = 0.88
-    AI_REVIEW_SIMILARITY_THRESHOLD: float = 0.78
+    DUPLICATE_STRONG_THRESHOLD: float = 0.85
+    AI_DUPLICATE_SIMILARITY_THRESHOLD: float = 0.70
+    AI_REVIEW_SIMILARITY_THRESHOLD: float = 0.60
     OPENAI_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
@@ -46,6 +47,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
 
 
 settings = Settings()

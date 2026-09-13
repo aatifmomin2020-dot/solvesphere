@@ -1,7 +1,8 @@
 from typing import Dict
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from app.services.embedding_service import EmbeddingService
 
-# Prototype evaluation dataset of 50 labeled civic challenge examples
+# Prototype benchmark evaluation dataset of 10 labeled civic challenge examples
 PROTOTYPE_EVALUATION_DATASET = [
     {"text": "Severe waterlogging near school gate after heavy rain", "domain": "Environment", "priority": "HIGH"},
     {"text": "Potholes accumulation causing traffic delays on main highway", "domain": "Urban Infrastructure", "priority": "HIGH"},
@@ -17,13 +18,12 @@ PROTOTYPE_EVALUATION_DATASET = [
 
 
 class AIEvaluator:
-    """Evaluates classification accuracy, precision, recall, and F1 over internal prototype dataset."""
+    """Evaluates multiclass accuracy, precision, recall, and F1 using sklearn.metrics over internal prototype dataset."""
 
     @classmethod
     def evaluate_benchmark(cls) -> Dict:
-        correct_domain = 0
-        correct_priority = 0
-        total = len(PROTOTYPE_EVALUATION_DATASET)
+        y_true = [item["domain"] for item in PROTOTYPE_EVALUATION_DATASET]
+        y_pred = []
 
         for item in PROTOTYPE_EVALUATION_DATASET:
             t_lower = item["text"].lower()
@@ -41,31 +41,28 @@ class AIEvaluator:
                 pred_domain = "Sanitation"
             else:
                 pred_domain = "Accessibility"
+            y_pred.append(pred_domain)
 
-            if pred_domain == item["domain"]:
-                correct_domain += 1
-
-        acc_pct = round((correct_domain / max(total, 1)) * 100, 1)
-        precision = round(correct_domain / max(total, 1), 2)
-        recall = round(correct_domain / max(total, 1), 2)
-        f1 = round((2 * precision * recall) / max(precision + recall, 0.01), 2)
+        acc = float(accuracy_score(y_true, y_pred))
+        precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="weighted", zero_division=0)
 
         model, flag = EmbeddingService.generate_embedding("Test challenge text for latency")
 
         return {
             "dataset_label": "Internal prototype evaluation dataset (10 Labeled Examples)",
             "metrics": {
-                "classification_accuracy_pct": acc_pct,
-                "classification_precision": precision,
-                "classification_recall": recall,
-                "classification_f1_score": f1,
+                "classification_accuracy_pct": round(acc * 100, 1),
+                "classification_precision": round(float(precision), 2),
+                "classification_recall": round(float(recall), 2),
+                "classification_f1_score": round(float(f1), 2),
                 "embedding_model": EmbeddingService.MODEL_NAME,
                 "embedding_model_status": flag,
                 "embedding_dimensions": EmbeddingService.EMBEDDING_DIM,
-                "evaluated_samples_count": total
+                "evaluated_samples_count": len(PROTOTYPE_EVALUATION_DATASET)
             },
             "observability": {
                 "prompt_injection_defense": "ENABLED (<UNTRUSTED_CHALLENGE_TEXT> Delimiters)",
-                "note": "Metrics are calculated dynamically from internal prototype evaluation dataset."
+                "note": "Metrics are dynamically computed using sklearn.metrics over internal prototype evaluation dataset."
             }
         }
+

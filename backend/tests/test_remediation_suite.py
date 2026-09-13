@@ -128,13 +128,19 @@ async def test_refresh_token_reuse():
 
 @pytest.mark.asyncio
 async def test_rate_limit():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        # Rapid logins should trigger rate limit (or return 200/401 without crashing)
-        responses = []
-        for _ in range(12):
-            r = await ac.post("/api/v1/auth/login", json={"email": "nonexistent@test.com", "password": "wrong"})
-            responses.append(r.status_code)
-        assert 429 in responses or 401 in responses
+    from app.core.limiter import limiter
+    limiter.enabled = True
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            # Rapid login requests exceeding limit MUST trigger HTTP 429 Too Many Requests
+            responses = []
+            for _ in range(20):
+                r = await ac.post("/api/v1/auth/login", json={"email": "nonexistent@test.com", "password": "wrong"})
+                responses.append(r.status_code)
+            assert 429 in responses
+    finally:
+        limiter.enabled = False
+
 
 
 @pytest.mark.asyncio

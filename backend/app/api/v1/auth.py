@@ -32,7 +32,9 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/demo-login", response_model=TokenResponse, summary="One-Click Demo Login Switcher")
-async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
+@limiter.limit("15/minute")
+async def demo_login(request: Request, role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
+
     """Logs in as a seeded demo account with RefreshToken database persistence."""
     role_upper = role.upper()
     role_email_map = {
@@ -49,6 +51,7 @@ async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
     user = result.scalar_one_or_none()
 
     if not user:
+
         user = User(
             email=target_email,
             hashed_password=get_password_hash("demo1234"),
@@ -59,6 +62,22 @@ async def demo_login(role: str = "CITIZEN", db: AsyncSession = Depends(get_db)):
         db.add(user)
         await db.commit()
         await db.refresh(user)
+
+    # Ensure demo user has explicit organization_id binding
+    if not user.organization_id:
+        if role_upper in ["UNIVERSITY", "FACULTY", "STUDENT"]:
+            u_res = await db.execute(select(University).limit(1))
+            univ_demo = u_res.scalar_one_or_none()
+            if univ_demo:
+                user.organization_id = univ_demo.organization_id or univ_demo.id
+                await db.commit()
+        elif role_upper == "INDUSTRY":
+            i_res = await db.execute(select(IndustryOrganization).limit(1))
+            ind_demo = i_res.scalar_one_or_none()
+            if ind_demo:
+                user.organization_id = ind_demo.organization_id or ind_demo.id
+                await db.commit()
+
 
     access_token, refresh_token = await AuthService.create_session_tokens(db, user)
 

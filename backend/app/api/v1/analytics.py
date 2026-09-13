@@ -12,7 +12,7 @@ router = APIRouter(prefix="/analytics", tags=["Analytics & Impact Dashboard"])
 
 @router.get("/overview", summary="Comprehensive Analytics Overview (Section 24 & 57)")
 async def get_analytics_overview(db: AsyncSession = Depends(get_db)):
-    """Computes North Star Metrics and domain distribution from database records."""
+    """Computes North Star Metrics, operational KPIs, and domain breakdown from database records."""
     # Submitted challenges
     tot_ch = await db.execute(select(func.count(Challenge.id)))
     submitted = tot_ch.scalar() or 0
@@ -20,6 +20,14 @@ async def get_analytics_overview(db: AsyncSession = Depends(get_db)):
     # Verified challenges
     ver_ch = await db.execute(select(func.count(Challenge.id)).where(Challenge.status.in_(["VERIFIED", "ROUTED", "PROPOSAL_SUBMITTED", "APPROVED", "ACTIVE", "PROTOTYPE", "PILOT", "DEPLOYED", "CLOSED"])))
     verified = ver_ch.scalar() or 0
+
+    # Rejected challenges
+    rej_ch = await db.execute(select(func.count(Challenge.id)).where(Challenge.status == "REJECTED"))
+    rejected = rej_ch.scalar() or 0
+
+    # Resolved challenges
+    res_ch = await db.execute(select(func.count(Challenge.id)).where(Challenge.status.in_(["DEPLOYED", "CLOSED"])))
+    resolved = res_ch.scalar() or 0
 
     # Deployed solutions
     dep_proj = await db.execute(select(func.count(Project.id)).where(Project.stage == "DEPLOYED"))
@@ -42,6 +50,26 @@ async def get_analytics_overview(db: AsyncSession = Depends(get_db)):
     dom_res = await db.execute(domain_stmt)
     by_category = [{"category": row[0], "count": row[1]} for row in dom_res.all()]
 
+    # Real DB Impact Metric aggregation
+    imp_res = await db.execute(select(func.sum(ImpactMetric.people_reached), func.avg(ImpactMetric.incident_reduction_percentage), func.sum(ImpactMetric.cost_saved_inr)))
+    imp_row = imp_res.first()
+
+    if imp_row and imp_row[0] is not None:
+        impact_data = {
+            "people_reached_total": imp_row[0],
+            "service_improvement_avg_pct": round(imp_row[1] or 0.0, 1),
+            "total_cost_saved_inr": imp_row[2] or 0.0,
+            "status": "LIVE DATABASE IMPACT RECORDS"
+        }
+    else:
+        impact_data = {
+            "status": "No impact data recorded yet",
+            "people_reached_total": 2450,
+            "service_improvement_avg_pct": 78.0,
+            "total_cost_saved_inr": 450000.0,
+            "label": "DEMO DATA"
+        }
+
     return {
         "north_star_metric": {
             "title": "Verified Challenges Converted to Deployed Solutions",
@@ -52,16 +80,14 @@ async def get_analytics_overview(db: AsyncSession = Depends(get_db)):
         "kpis": {
             "submitted_challenges": submitted,
             "verified_challenges": verified,
+            "rejected_challenges": rejected,
+            "resolved_challenges": resolved,
             "deployed_solutions": deployed,
             "participating_universities": universities,
             "industry_partners": industry_partners,
             "citizen_satisfaction_avg": avg_rating
         },
         "by_category": by_category,
-        "impact_summary": {
-            "people_reached_total": 24500,
-            "service_improvement_avg_pct": 76.5,
-            "total_cost_saved_inr": 4500000.0,
-            "label": "SIMULATED / DEMO DATA"
-        }
+        "impact_summary": impact_data
     }
+

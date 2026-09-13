@@ -21,7 +21,7 @@ async def test_file_upload_validation_and_security():
         assert upload_res.status_code == 200
         data = upload_res.json()
         assert "media_id" in data
-        assert data["scan_status"] in ["NOT_SCANNED", "CLEAN"]
+        assert data["scan_status"] == "NOT_SCANNED"
 
         assert "file_hash_sha256" in data
 
